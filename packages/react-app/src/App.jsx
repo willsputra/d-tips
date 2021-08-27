@@ -1,6 +1,8 @@
 import WalletConnectProvider from "@walletconnect/web3-provider";
+import { CloseOutlined } from "@ant-design/icons";
 //import Torus from "@toruslabs/torus-embed"
 import WalletLink from "walletlink";
+
 import { Alert, Button, Col, Menu, Row, Input, List, notification, Select, Divider, Statistic } from "antd";
 const { SubMenu } = Menu;
 const { Option } = Select;
@@ -52,7 +54,7 @@ const { ethers, BigNumber } = require("ethers");
 */
 
 /// 📡 What chain are your contracts deployed to?
-const targetNetwork = NETWORKS.rinkeby; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const targetNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
@@ -70,8 +72,8 @@ const scaffoldEthProvider = navigator.onLine
   : null;
 const poktMainnetProvider = navigator.onLine
   ? new ethers.providers.StaticJsonRpcProvider(
-      "https://eth-mainnet.gateway.pokt.network/v1/lb/611156b4a585a20035148406",
-    )
+    "https://eth-mainnet.gateway.pokt.network/v1/lb/611156b4a585a20035148406",
+  )
   : null;
 const mainnetInfura = navigator.onLine
   ? new ethers.providers.StaticJsonRpcProvider("https://mainnet.infura.io/v3/" + INFURA_ID)
@@ -170,8 +172,8 @@ function App(props) {
     poktMainnetProvider && poktMainnetProvider._isProvider
       ? poktMainnetProvider
       : scaffoldEthProvider && scaffoldEthProvider._network
-      ? scaffoldEthProvider
-      : mainnetInfura;
+        ? scaffoldEthProvider
+        : mainnetInfura;
 
   const [injectedProvider, setInjectedProvider] = useState();
   const [address, setAddress] = useState();
@@ -492,16 +494,16 @@ function App(props) {
                 and give you a form to interact with it locally
             */}
 
-            <div style={{ margin: "20px auto", width: 500, padding: 60, border: "3px solid" }}>
-              <h2>{title}</h2>
+            <div className="wrapper">
+              <h2 style={{ fontFamily: "Space Mono" }}>{title}</h2>
               <Input
-                style={{ marginTop: "10px", marginBottom: "10px" }}
+                style={{ marginTop: "8px", marginBottom: "16px" }}
                 addonBefore="Message"
                 value={message}
                 placeholder="Message"
                 onChange={e => setMessage(e.target.value)}
               />
-              <div style={{ marginBottom: "10px" }}>
+              <div style={{ textAlign: "right" }}>
                 {!isOwner && (
                   <div>
                     <Button
@@ -573,12 +575,12 @@ function App(props) {
                 )}
 
                 {isOwner && (
-                  <div>
+                  <div style={{ marginBottom: "48px" }}>
                     {/*<Button onClick = {() =>setLink(message)}>
                       Generate Link
                     </Button>*/}
                     <Button
-                      style={{ marginLeft: "10px" }}
+                      type="primary"
                       onClick={async () => {
                         const res = await axios.get(appServer + message);
                         console.log("res", res);
@@ -600,7 +602,11 @@ function App(props) {
               </div>
               {isOwner && (
                 <div>
+                  <Divider />
+                  <h4 style={{ fontFamily: "Space Mono", marginTop: "40px" }}>Logged Accounts ({addresses.length})</h4>
                   <List
+                    style={{ marginTop: "16px" }}
+                    size="large"
                     bordered
                     dataSource={addresses}
                     renderItem={(item, index) => (
@@ -615,16 +621,16 @@ function App(props) {
                             alignItems: "center",
                           }}
                         >
-                          <Address address={item} ensProvider={mainnetProvider} fontSize={12} />
+                          <Address address={item} ensProvider={mainnetProvider} fontSize={14} />
                           <Button
                             onClick={async () => {
                               const updatedAddresses = [...addresses];
                               updatedAddresses.splice(index, 1);
                               setAddresses(updatedAddresses);
                             }}
-                            size="medium"
+                            type="link" icon={<CloseOutlined />}
+                            size="small"
                           >
-                            X
                           </Button>
                         </div>
                       </List.Item>
@@ -632,10 +638,11 @@ function App(props) {
                   />
 
                   {addresses && addresses.length > 0 && (
-                    <div>
+                    <div style={{ marginTop: "32px" }}>
+                      <h4 style={{ fontFamily: "Space Mono" }}>Payout</h4>
                       <Select
-                        defaultValue="Select token..."
-                        style={{ width: "100%", textAlign: "left", float: "left", marginTop: "10px" }}
+                        placeholder="Select token..."
+                        style={{ width: "100%", textAlign: "left", float: "left", marginTop: "8px" }}
                         onChange={value => {
                           setToken(value);
                         }}
@@ -653,8 +660,10 @@ function App(props) {
                         onChange={e => setAmount(e.target.value.toLowerCase())}
                       />
                       {token && token == "ETH" && (
-                        <div style={{ marginTop: "10px", marginBottom: "10px" }}>
+                        <div style={{ marginTop: "10px", marginBottom: "10px", textAlign: "right" }}>
+                        <p>Each user will receive {amount / addresses.length}  {token}</p>
                           <Button
+                            type="primary"
                             onClick={async () => {
                               /* look how you call setPurpose on your contract: */
                               /* notice how you pass a call back for tx updates too */
@@ -668,12 +677,12 @@ function App(props) {
                                     console.log(" 🍾 Transaction " + update.hash + " finished!");
                                     console.log(
                                       " ⛽️ " +
-                                        update.gasUsed +
-                                        "/" +
-                                        (update.gasLimit || update.gas) +
-                                        " @ " +
-                                        parseFloat(update.gasPrice) / 1000000000 +
-                                        " gwei",
+                                      update.gasUsed +
+                                      "/" +
+                                      (update.gasLimit || update.gas) +
+                                      " @ " +
+                                      parseFloat(update.gasPrice) / 1000000000 +
+                                      " gwei",
                                     );
                                     notification.success({
                                       message: "Payout successful",
@@ -694,7 +703,8 @@ function App(props) {
                       )}
 
                       {token && token != "ETH" && (
-                        <div style={{ marginTop: "10px", marginBottom: "10px" }}>
+                        <div style={{ marginTop: "10px", marginBottom: "10px", textAlign: "right" }}>
+                        <p>Each user will receive {amount / addresses.length}  {token}</p>
                           <Button
                             onClick={async () => {
                               /* look how you call setPurpose on your contract: */
@@ -710,12 +720,12 @@ function App(props) {
                                     console.log(" 🍾 Transaction " + update.hash + " finished!");
                                     console.log(
                                       " ⛽️ " +
-                                        update.gasUsed +
-                                        "/" +
-                                        (update.gasLimit || update.gas) +
-                                        " @ " +
-                                        parseFloat(update.gasPrice) / 1000000000 +
-                                        " gwei",
+                                      update.gasUsed +
+                                      "/" +
+                                      (update.gasLimit || update.gas) +
+                                      " @ " +
+                                      parseFloat(update.gasPrice) / 1000000000 +
+                                      " gwei",
                                     );
                                     notification.success({
                                       message: "Token successfully approved",
@@ -750,12 +760,12 @@ function App(props) {
                                     console.log(" 🍾 Transaction " + update.hash + " finished!");
                                     console.log(
                                       " ⛽️ " +
-                                        update.gasUsed +
-                                        "/" +
-                                        (update.gasLimit || update.gas) +
-                                        " @ " +
-                                        parseFloat(update.gasPrice) / 1000000000 +
-                                        " gwei",
+                                      update.gasUsed +
+                                      "/" +
+                                      (update.gasLimit || update.gas) +
+                                      " @ " +
+                                      parseFloat(update.gasPrice) / 1000000000 +
+                                      " gwei",
                                     );
                                     notification.success({
                                       message: "Payout successful",
