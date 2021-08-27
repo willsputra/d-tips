@@ -2,7 +2,8 @@ import WalletConnectProvider from "@walletconnect/web3-provider";
 import { CloseOutlined } from "@ant-design/icons";
 //import Torus from "@toruslabs/torus-embed"
 import WalletLink from "walletlink";
-import { Alert, Button, Col, Menu, Row, Input, List, notification, Select, Divider } from "antd";
+
+import { Alert, Button, Col, Menu, Row, Input, List, notification, Select, Divider, Statistic } from "antd";
 const { SubMenu } = Menu;
 const { Option } = Select;
 import { DownOutlined, UserOutlined } from "@ant-design/icons";
@@ -179,6 +180,7 @@ function App(props) {
 
   const [message, setMessage] = useState();
   const [addresses, setAddresses] = useState([]);
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const [amount, setAmount] = useState(0);
   const [tokenAddress, setTokenAddress] = useState("");
   const [owner, setOwner] = useState("");
@@ -446,9 +448,14 @@ function App(props) {
     );
   }
 
-  // const [message,setMessage] = useState()
-  // const [addresses,setAddresses] = useState()
   const [res, setRes] = useState("");
+
+  useEffect(async () => {
+    // console.log("**************** " + message)
+    const res = await axios.get(appServer + message);
+    // console.log("res", res);
+    if(res.data) setAddresses(res.data);
+  }, [appServer, message])
 
   return (
     <div className="App">
@@ -498,46 +505,80 @@ function App(props) {
               />
               <div style={{ textAlign: "right" }}>
                 {!isOwner && (
-                  <Button
-                    type="primary"
-                    onClick={async () => {
-                      let sig = await userSigner.signMessage(message);
+                  <div>
+                    <Button
+                      onClick={async () => {
 
-                      const res = await axios.post(appServer, {
-                        address: address,
-                        message: message,
-                        signature: sig,
-                      });
+                        if(typeof(appServer) == 'undefined') {
+                          return notification.error({
+                            message: "Setup Error",
+                            description: "Missing backend URL",
+                            placement: "bottomRight",
+                          });
+                        }
+  
+                        const messageLength = message && message.split(' ').length;
+                        if(typeof(message) == 'undefined' || message === '' || messageLength > 1) {
+                          return notification.error({
+                            message: "Failed to Sign!",
+                            description: "Message should be one word",
+                            placement: "bottomRight",
+                          });
+                        }
 
-                      if (res.data) {
-                        // set up some user messages here besides the alert...
-                        // how many other users are signed-in?
-                        //
+                        let sig = await userSigner.signMessage(message);
 
-                        notification.success({
-                          message: "Signed in successfully",
-                          placement: "bottomRight",
+                        const res = await axios.post(appServer, {
+                          address: address,
+                          message: message,
+                          signature: sig,
+                        })
+                        .catch((error)=> {
+                          return notification.error({
+                            message: "Failed to Sign!",
+                            description: `Connection issue ${error}`,
+                            placement: "bottomRight",
+                          });
                         });
-                      } else {
-                        // set up user error notice besides the alert...
-                        notification.error({
-                          message: "Failed to sign in!",
-                          description: "You have already signed in",
-                          placement: "bottomRight",
-                        });
-                      }
-                      setRes("");
-                    }}
-                  >
-                    Sign In
-                  </Button>
+
+                        if (res.data) {
+                          // set up some user messages here besides the alert...
+                          // how many other users are signed-in?
+                          //
+                          setIsSignedIn(true);
+                          notification.success({
+                            message: "Signed in successfully",
+                            placement: "bottomRight",
+                          });
+                        } else {
+                          setIsSignedIn(true);
+                          // set up user error notice besides the alert...
+                          notification.error({
+                            message: "Failed to sign in!",
+                            description: "You have already signed in",
+                            placement: "bottomRight",
+                          });
+                        }
+                        setRes("");
+                      }}
+                    >
+                      Sign In
+                    </Button>
+                    <Divider />
+                    <div>
+                      <Statistic title="Signed In" value={isSignedIn} valueStyle={{ color: (!isSignedIn ? "red" : "green") }} />
+                    </div>
+                    <div>
+                      <Statistic title="Active Users" value={addresses.length} />
+                    </div>
+                  </div>
                 )}
 
                 {isOwner && (
                   <div style={{ marginBottom: "48px" }}>
                     {/*<Button onClick = {() =>setLink(message)}>
-                    Generate Link
-                </Button>*/}
+                      Generate Link
+                    </Button>*/}
                     <Button
                       type="primary"
                       onClick={async () => {
