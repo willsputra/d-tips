@@ -620,6 +620,7 @@ function App(props) {
                       />
                       {token && token == "ETH" && (
                         <div style={{ marginTop: "10px", marginBottom: "10px", textAlign: "right" }}>
+                        <p>Each user will receive {amount / addresses.length}  {token}</p>
                           <Button
                             type="primary"
                             onClick={async () => {
@@ -662,6 +663,7 @@ function App(props) {
 
                       {token && token != "ETH" && (
                         <div style={{ marginTop: "10px", marginBottom: "10px", textAlign: "right" }}>
+                        <p>Each user will receive {amount / addresses.length}  {token}</p>
                           <Button
                             onClick={async () => {
                               /* look how you call setPurpose on your contract: */
